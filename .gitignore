@@ -1,0 +1,6 @@
+/vendor
+/.phpunit.cache
+/.phpstan.cache
+.phpunit.result.cache
+.phpactor.json
+/auth.json
