@@ -99,6 +99,21 @@ php vendor/bin/testbench parallel-tools:demo several-fail
 php vendor/bin/testbench parallel-tools:demo mixed
 ```
 
+`--mode=parallel` is the default and uses Laravel's `process` concurrency driver. `--mode=sequential` runs the same 42 marked calls with the driver switched to `sync`, so the only difference is concurrency. `--json` prints one JSON object to stdout and nothing else. The gateway stays scripted: no API key and no HTTP.
+
+```bash
+php vendor/bin/testbench parallel-tools:demo all-succeed --mode=parallel --json
+php vendor/bin/testbench parallel-tools:demo all-succeed --mode=sequential --json
+```
+
+```json
+{"calls":42,"mode":"parallel","driver":"process","scenario":"all-succeed","wall_ms":1303.4,"summed_delay_ms":6711,"invoked":42,"failed":0,"results_in_call_order":true,"threw":null}
+```
+
+```json
+{"calls":42,"mode":"sequential","driver":"sync","scenario":"all-succeed","wall_ms":6725.9,"summed_delay_ms":6711,"invoked":42,"failed":0,"results_in_call_order":true,"threw":null}
+```
+
 `all-succeed` is the default. The command exits `0` when the outcome matches the scenario. Wall time depends on the machine; this run was PHP 8.3 with the `process` driver. Summed delay is 6711.0ms. Overlapping the 42 sleeps finished in about 1.2–1.5s (about 4.5–5.4x).
 
 ```text
@@ -186,7 +201,7 @@ That loop groups adjacent `#[Concurrent]` tools, runs the group, then settles re
 composer check
 ```
 
-That runs Pint (`pint --test`), PHPStan (level 6 on `src`), and Pest. The feature tests cover parallel success, call-order results when execution order differs, a single failure, several failures, a mixed batch, streaming, approval resume, a failed approval beside a successful one, and real overlap under the `process` driver.
+That runs Pint (`pint --test`), PHPStan (level 6 on `src`), and Pest. The feature tests cover parallel success, call-order results when execution order differs, a single failure, several failures, a mixed batch, streaming, approval resume, a failed approval beside a successful one, real overlap under the `process` driver, and the demo JSON shape in both modes.
 
 GitHub Actions (`.github/workflows/ci.yml`) runs the same checks on PHP 8.3 and 8.4.
 

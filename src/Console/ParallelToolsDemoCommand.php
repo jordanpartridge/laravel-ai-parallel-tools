@@ -26,13 +26,23 @@ use Throwable;
 class ParallelToolsDemoCommand extends Command
 {
     protected $signature = 'parallel-tools:demo
-        {scenario=all-succeed : all-succeed, one-fail, several-fail, or mixed}';
+        {scenario=all-succeed : all-succeed, one-fail, several-fail, or mixed}
+        {--mode=parallel : parallel (process driver) or sequential (sync driver)}
+        {--json : Print one JSON object to stdout and nothing else}';
 
-    protected $description = 'Run 42 scripted tool calls concurrently and compare wall time with the summed delays';
+    protected $description = 'Run 42 scripted tool calls and compare wall time with the summed delays';
 
     public function handle(): int
     {
         $scenario = (string) $this->argument('scenario');
+        $mode = (string) $this->option('mode');
+        $json = (bool) $this->option('json');
+
+        if (! in_array($mode, ['parallel', 'sequential'], true)) {
+            $this->error('Unknown mode ['.$mode.']. Use parallel or sequential.');
+
+            return self::FAILURE;
+        }
 
         try {
             DemoProbe::failingNumbers($scenario);
@@ -42,8 +52,13 @@ class ParallelToolsDemoCommand extends Command
             return self::FAILURE;
         }
 
-        ProcessAutoload::ensure();
-        config(['concurrency.default' => 'process']);
+        $driver = $mode === 'sequential' ? 'sync' : 'process';
+
+        if ($driver === 'process') {
+            ProcessAutoload::ensure();
+        }
+
+        config(['concurrency.default' => $driver]);
 
         $probes = DemoProbe::plan($scenario);
         $calls = array_map(
@@ -89,10 +104,28 @@ class ParallelToolsDemoCommand extends Command
         ));
         $ordered = $invoked === $expectedInvoked;
         $leaked = $this->failureLeakedIntoResults($response);
+        $ok = $ordered && ! $leaked && $this->outcomeMatches($scenario, $thrown, $invoked, $failed);
+
+        if ($json) {
+            $this->output->writeln((string) json_encode([
+                'calls' => DemoProbe::COUNT,
+                'mode' => $mode,
+                'driver' => $driver,
+                'scenario' => $scenario,
+                'wall_ms' => (float) $this->ms($wallMs),
+                'summed_delay_ms' => (float) $this->ms($sumMs),
+                'invoked' => count($invoked),
+                'failed' => count($failed),
+                'results_in_call_order' => $ordered,
+                'threw' => $this->thrownName($thrown),
+            ], JSON_THROW_ON_ERROR));
+
+            return $ok ? self::SUCCESS : self::FAILURE;
+        }
 
         $this->line('parallel-tools demo');
         $this->line('scenario: '.$scenario);
-        $this->line('driver: process');
+        $this->line('driver: '.$driver);
         $this->line('calls: '.DemoProbe::COUNT);
         $this->line('summed_delay_ms: '.$this->ms($sumMs));
         $this->line('wall_ms: '.$this->ms($wallMs));
@@ -127,9 +160,24 @@ class ParallelToolsDemoCommand extends Command
             $this->line('answer: '.$response->text);
         }
 
-        $ok = $ordered && ! $leaked && $this->outcomeMatches($scenario, $thrown, $invoked, $failed);
-
         return $ok ? self::SUCCESS : self::FAILURE;
+    }
+
+    private function thrownName(?Throwable $thrown): ?string
+    {
+        if ($thrown === null) {
+            return null;
+        }
+
+        if ($thrown instanceof MultipleParallelToolFailures) {
+            return 'MultipleParallelToolFailures';
+        }
+
+        if ($thrown instanceof ProbeFailed) {
+            return 'ProbeFailed';
+        }
+
+        return $thrown::class;
     }
 
     /**
