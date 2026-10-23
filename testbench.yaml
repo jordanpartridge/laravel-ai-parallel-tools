@@ -1,0 +1,5 @@
+laravel: '@testbench'
+
+providers:
+  - Laravel\Ai\AiServiceProvider
+  - JordanPartridge\ParallelTools\ParallelToolsServiceProvider
