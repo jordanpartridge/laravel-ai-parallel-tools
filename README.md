@@ -2,8 +2,6 @@
 
 Concurrent tool calls for [Laravel AI](https://github.com/laravel/ai) agents. When a model step asks for several tools, the ones you mark run together, and their results go back in the original call order.
 
-Laravel AI pull request #759, which proposed this in core, was closed, and releasing it as a package was the suggested route.
-
 The package works with stock `laravel/ai` ^1.3. It does not fork the framework and it does not edit framework files.
 
 ## Requirements
@@ -19,19 +17,6 @@ composer require jordanpartridge/laravel-ai-parallel-tools
 ```
 
 Laravel discovers `JordanPartridge\ParallelTools\ParallelToolsServiceProvider`. After that, `Agent::prompt()` and `Agent::stream()` use the parallel tool loop.
-
-This repository is not published to Packagist. Until it is, point Composer at the Git repository:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/jordanpartridge/laravel-ai-parallel-tools"
-        }
-    ]
-}
-```
 
 ## Usage
 
@@ -163,6 +148,17 @@ threw: MultipleParallelToolFailures
 thrown_tools: probe-03, probe-10, probe-21, probe-40
 message: 4 tools failed in one step. None of those errors were returned to the model as text. probe-03: JordanPartridge\ParallelTools\Demo\ProbeFailed: Probe 3 failed.; probe-10: JordanPartridge\ParallelTools\Demo\ProbeFailed: Probe 10 failed.; probe-21: JordanPartridge\ParallelTools\Demo\ProbeFailed: Probe 21 failed.; probe-40: JordanPartridge\ParallelTools\Demo\ProbeFailed: Probe 40 failed.
 ```
+
+## Benchmark
+
+42 tool calls in the `all-succeed` demo, measured on a Ryzen AI MAX+ 395 with PHP 8.5 and `laravel/ai` v1.3.0, 10 runs per mode after 2 warmups, with no errors:
+
+| Mode | p50 wall time |
+| --- | --- |
+| Parallel (`process` driver) | 400.1 ms |
+| Sequential (`sync` driver) | 6720.2 ms |
+
+That is about 16.8x faster at p50, or about 14x when you include PHP and testbench startup for each run. The demo uses a fake gateway with no network calls, so this measures how the tool calls are scheduled, not model latency.
 
 ## Errors
 
