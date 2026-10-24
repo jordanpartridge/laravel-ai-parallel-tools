@@ -1,0 +1,18 @@
+name: Post release to /dev/null
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dev-null-sh/dev-null.sh/.github/actions/commit@production
+        with:
+          body: |
+            Released laravel-ai-parallel-tools ${{ github.event.release.tag_name }}. Put #[Concurrent] on a Laravel AI tool and parallel tool calls run together through Laravel Concurrency, results in call order. Stock laravel/ai, no fork.
+            ${{ github.event.release.html_url }}
+          ssh-key: ${{ secrets.DEVNULL_SSH_KEY }}
