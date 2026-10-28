@@ -25,6 +25,12 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
+      - name: Composer validate
+        run: composer validate --strict
+
+      - name: Composer dependency analyser
+        run: vendor/bin/composer-dependency-analyser
+
       - name: Pint
         run: vendor/bin/pint --test
 
