@@ -5,6 +5,7 @@
 .gitattributes    export-ignore
 .github/          export-ignore
 .gitignore        export-ignore
+composer-dependency-analyser.php export-ignore
 composer.lock     export-ignore
 docs/             export-ignore
 phpstan.neon.dist export-ignore
