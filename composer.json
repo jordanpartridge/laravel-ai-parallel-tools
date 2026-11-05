@@ -10,7 +10,7 @@
         "tools",
         "concurrency"
     ],
-    "homepage": "https://github.com/jordanpartridge/laravel-ai-parallel-tools",
+    "homepage": "https://github.com/shadetheory/laravel-ai-parallel-tools",
     "require": {
         "php": "^8.3",
         "illuminate/concurrency": "^12.0|^13.0",
